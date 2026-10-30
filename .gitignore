@@ -50,3 +50,5 @@ perf_eval/video_metadata_extraction/data/obj/_oi_cache/
 
 # 연구개발계획서 등 대외비 원문 PDF(대용량) — 로컬 전용, git 추적 금지(실수 커밋 방지)
 /docs/*.pdf
+# 홍보 자료 — 저장소에 올리지 않는다 (영상 14MB, 대본은 작업용)
+docs/promo/
