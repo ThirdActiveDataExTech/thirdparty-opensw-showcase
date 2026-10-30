@@ -1,0 +1,40 @@
+# 로컬 실행용 최소 구성 — PostgreSQL + pgvector, S3 호환 스토리지(MinIO).
+#
+#   docker compose up -d
+#
+# 운영 환경과 버전을 맞춰 두었다. pgvector 0.8.x는 HNSW 부분 인덱스를 지원한다.
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    environment:
+      POSTGRES_DB: metadata
+      POSTGRES_USER: metadata
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
+      # HNSW 인덱스 빌드용. 기본 64MB에서는 약 17,700행부터 그래프가 메모리를
+      # 넘겨 빌드가 크게 느려진다(docs/adr/016 참조).
+      POSTGRES_INITDB_ARGS: "-c maintenance_work_mem=2GB"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U metadata -d metadata"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_KEY:-change-me}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - miniodata:/data
+
+volumes:
+  pgdata:
+  miniodata:

@@ -1,0 +1,23 @@
+[project]
+name = "active-metadata-ingestion"
+version = "0.1.0"
+requires-python = ">=3.9"
+
+dependencies = [
+    "psycopg2-binary",
+    "python-dotenv",
+    "requests",
+    "sentence-transformers",   # multilingual-e5-base (768 dims)
+    "pgvector",                # pgvector Python adapter (vector type support)
+    "google-api-python-client", # YouTube Data API v3
+    "beautifulsoup4",           # 뉴스/블로그 본문 스크래핑
+    "boto3",                    # SeaweedFS S3 클라이언트
+    "yt-dlp",                   # YouTube 오디오 다운로드 (트랜스크립트용)
+    "faster-whisper",           # 로컬 STT (CTranslate2, CPU 추론)
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.ruff]
+line-length = 100

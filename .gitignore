@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual Environment
+.venv/
+venv/
+
+# Environment Variables
+.env
+
+# K8s Secrets (실제 값이 채워진 파일 — 템플릿(.template)은 커밋 허용)
+k8s/secrets/*.yaml
+!k8s/secrets/*.yaml.template
+
+# macOS
+.DS_Store
+
+# VSCode
+.vscode/settings.json
+
+# Logs
+logs/
+*.log
+
+# Test
+.pytest_cache/
+
+# IDE
+.idea/
+
+# Python build
+build/
+dist/
+*.egg-info/
+
+# ML model weights (ultralytics 등에서 자동 다운로드 — 커밋 금지)
+*.pt
+
+# Open Images 라벨 다운로드 캐시 (대용량, 재다운 가능)
+perf_eval/video_metadata_extraction/data/obj/_oi_cache/
+
+# perf_eval — 내부 성능평가 전체(비공개, 서버 수동 배포용). git 추적 제외.
+# 테스트 종료 후 서버에서 폴더 삭제 예정. 삭제 전 별도 백업 권장(이후 git에 남지 않음).
+/perf_eval/
+
+# docs/research — 논문·실험 작업물(대용량, 로컬 전용 보관). git 추적 제외.
+/docs/research/
+
+# 연구개발계획서 등 대외비 원문 PDF(대용량) — 로컬 전용, git 추적 금지(실수 커밋 방지)
+/docs/*.pdf
