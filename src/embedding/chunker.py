@@ -53,13 +53,29 @@ _BOILERPLATE = re.compile(
 
 
 def _is_noise(text: str) -> bool:
-    """버릴 청크인지. 의미 없는 파편이거나 매체 고정 문구면 True."""
+    """버릴 청크인지. 의미 없는 파편이거나 매체 고정 문구면 True.
+
+    길이 기준은 **쪼개고 남은 파편**에만 쓴다. 문서 자체가 짧은 경우
+    (`"서울역사박물관"` 같은 제목)는 _keep_short()가 따로 살린다.
+    """
     t = text.strip()
     if len(t) < MIN_SIZE or not _ALNUM.search(t):
         return True
     if _RULE.match(t):
         return True
     return bool(_BOILERPLATE.search(t))
+
+
+def _keep_short(text: str) -> bool:
+    """문서 전체가 MIN_SIZE보다 짧을 때 그래도 살릴 값인지.
+
+    길이만 빼고 _is_noise와 같은 기준을 적용한다. `"위암"`, `"서울역사박물관"`
+    처럼 짧아도 의미가 있는 제목을 검색에서 통째로 잃지 않기 위한 것이다.
+    """
+    t = text.strip()
+    if not _ALNUM.search(t) or _RULE.match(t):
+        return False
+    return not _BOILERPLATE.search(t)
 
 
 def chunk(text: str, size: int = DEFAULT_SIZE) -> List[str]:
@@ -102,4 +118,12 @@ def chunk(text: str, size: int = DEFAULT_SIZE) -> List[str]:
         if m not in seen and not _is_noise(m):
             seen.add(m)
             out.append(m)
+
+    # 전부 걸러졌는데 원문에 내용이 있으면, 짧다는 이유로 문서를 통째로
+    # 잃지 않도록 원문 하나를 청크로 남긴다. 청크가 0개가 되면 그 문서는
+    # 검색 결과에 영원히 나오지 않는다 — 조용히 사라지는 쪽이 더 나쁘다.
+    if not out:
+        t = text.strip()
+        if _keep_short(t):
+            return [t[:size]]
     return out
