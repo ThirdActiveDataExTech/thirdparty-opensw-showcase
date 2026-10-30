@@ -1,4 +1,4 @@
-# Active Metadata Ingestion
+# Thirdparty OpenSW Showcase
 
 공개 데이터 원천에서 **비정형 데이터를 수집하고, 메타데이터를 표준 형식으로 정제한 뒤,
 자연어로 검색할 수 있게 임베딩**하는 모듈입니다.
@@ -7,6 +7,9 @@
 (RS-2024-00340834)의 공개 소프트웨어 산출물입니다.
 
 **License:** Apache-2.0 · **Python:** 3.9+ · **DB:** PostgreSQL 17 + pgvector
+
+> 이 저장소는 과제 공개 SW 산출물의 **스냅샷**입니다. 내부 개발 저장소와
+> 실시간으로 동기화되지 않습니다.
 
 ---
 
@@ -47,8 +50,8 @@
 ### 1) 저장소 복제와 의존성 설치
 
 ```bash
-git clone https://github.com/ThirdActiveDataExTech/active-metadata-ingestion.git
-cd active-metadata-ingestion
+git clone https://github.com/ThirdActiveDataExTech/thirdparty-opensw-showcase.git
+cd thirdparty-opensw-showcase
 
 python -m venv .venv && source .venv/bin/activate
 pip install -e .
