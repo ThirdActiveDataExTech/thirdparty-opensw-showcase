@@ -37,7 +37,7 @@ from datetime import date, datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
 from src.collectors import naver_datalab_scale, naver_shopping_collector
-from src.database import dcat, meta_shopping_insight
+from src.database import category, dcat, meta_shopping_insight, theme
 from src.database.db import get_conn
 from src.embedding import sync as embedding_sync
 from src.storage import jsonld_export
@@ -184,7 +184,7 @@ def run(dataset_id: str, triggered_by: str) -> None:
             logger.warning(f"theme 집계 실패, 수집 자체는 성공 처리: {e}")
 
         # category(공통 분류) 부여 — theme 집계 뒤에 해야 theme을 근거로 쓸 수 있다.
-        # 협력기관 분류표(대분류 7 / 중분류 76) 안에서 임베딩 최근접으로 고른다.
+        # 공통 분류표(대분류 7 / 중분류 76) 안에서 임베딩 최근접으로 고른다.
         # ⚠️ 품질이 낮다(Top-1 3/8). 비워 두면 포털 전체 필터링이 성립하지 않아
         #    틀리더라도 일단 부여하고, 로컬 sLLM이 생기면 대체한다.
         #    docs/database/column_fill_matrix.md §9

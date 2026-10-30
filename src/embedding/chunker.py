@@ -47,7 +47,9 @@ _RULE = re.compile(r"^(.)\1{3,}$")
 # 본문이 아니라 매체가 모든 글에 붙이는 고정 문구.
 # 질의와 무관하게 중간 정도 유사도를 내서 최대값 집계를 교란한다.
 _BOILERPLATE = re.compile(
-    r"저작권자|무단\s*전재|재배포\s*금지|All rights reserved|이 기사를 공유합니다",
+    r"저작권자|무단\s*전재|재배포\s*금지|All rights reserved|Copyright\s*(©|\(c\))"
+    r"|이 기사를 공유합니다|청소년\s*보호\s*책임자|등록\s*번호\s*:"
+    r"|등록·?발행일자|댓글\s*삭제|답글과 추천수",
     re.IGNORECASE,
 )
 
