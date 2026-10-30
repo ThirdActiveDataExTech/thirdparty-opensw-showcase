@@ -20,16 +20,17 @@ import argparse
 from src.database.db import get_conn
 from src.embedding import embedder
 
-# (벡터 테이블, 원본 테이블, 조인 키, 표시할 컬럼)
+# (벡터 테이블, 원본 테이블, 벡터쪽 키, 원본쪽 키, 제목 컬럼, 부제 컬럼)
 SOURCES = {
-    "video": ("meta_video_vec", "meta_video", "id", "title", "channel_title"),
-    "news":  ("meta_news_vec",  "meta_news",  "id", "title", "publisher"),
-    "blog":  ("meta_blog_vec",  "meta_blog",  "id", "title", "blogger_name"),
+    "video":   ("meta_video_vec",   "meta_video",   "meta_id",    "id",         "title", "channel_title"),
+    "news":    ("meta_news_vec",    "meta_news",    "meta_id",    "id",         "title", "publisher"),
+    "blog":    ("meta_blog_vec",    "meta_blog",    "meta_id",    "id",         "title", "blogger_name"),
+    "dataset": ("dcat_dataset_vec", "dcat_dataset", "dataset_id", "dataset_id", "title", "source_type"),
 }
 
 
 def search(query: str, source: str, top_k: int):
-    vec, base, key, title_col, sub_col = SOURCES[source]
+    vec, base, vkey, bkey, title_col, sub_col = SOURCES[source]
     q = str(embedder.encode_query(query))          # ← `query: ` 프리픽스가 여기서 붙는다
 
     conn = get_conn()
@@ -39,8 +40,8 @@ def search(query: str, source: str, top_k: int):
         SELECT b.{title_col}, b.{sub_col},
                ROUND(MAX(1 - (v.embedding <=> %s::vector))::numeric, 4) AS score
         FROM   {vec} v
-        JOIN   {base} b ON b.{key} = v.meta_id
-        GROUP  BY b.{key}, b.{title_col}, b.{sub_col}   -- 청크를 원본 1건으로 묶는다
+        JOIN   {base} b ON b.{bkey} = v.{vkey}
+        GROUP  BY b.{bkey}, b.{title_col}, b.{sub_col}   -- 청크를 원본 1건으로 묶는다
         ORDER  BY score DESC
         LIMIT  %s
         """,
