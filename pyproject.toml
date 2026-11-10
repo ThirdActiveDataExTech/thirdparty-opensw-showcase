@@ -14,6 +14,9 @@ dependencies = [
     "boto3",                    # SeaweedFS S3 클라이언트
     "yt-dlp",                   # YouTube 오디오 다운로드 (트랜스크립트용)
     "faster-whisper",           # 로컬 STT (CTranslate2, CPU 추론)
+    # faster-whisper 1.2.x는 av.open(metadata_errors=...)를 쓴다. PyAV 16부터 이 인자가 없어져
+    # 자막 생성이 전부 실패한다(2026-11 확인: av 19.0.2 실패, 15.1.0 정상).
+    "av>=12,<16",
 ]
 
 [project.optional-dependencies]
@@ -21,3 +24,10 @@ dev = ["pytest"]
 
 [tool.ruff]
 line-length = 100
+
+# 코드는 `src` 패키지로 임포트한다(from src.database.db import …).
+# 이 설정이 없으면 setuptools가 src/ 를 "src 레이아웃"으로 보고 그 안의 하위 폴더만
+# 최상위 패키지로 설치해, `python scripts/*.py`가 "No module named 'src'"로 실패한다.
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src", "src.*"]

@@ -47,46 +47,72 @@
 
 ## 실행 방법
 
-### 1) 저장소 복제와 의존성 설치
+다섯 단계로 따라 할 수 있습니다. 명령은 터미널(macOS: 터미널, Windows: PowerShell)에 한 줄씩 입력합니다.
+
+**준비물**
+
+- Python 3.9 이상, Git, [Docker Desktop](https://www.docker.com/products/docker-desktop/)(실행해 둔 상태)
+- 자료를 불러올 원천의 API 키 — YouTube는 [Google Cloud 콘솔](https://console.cloud.google.com),
+  네이버 뉴스·블로그는 [네이버 개발자센터](https://developers.naver.com/apps)에서 무료로 발급합니다.
+
+| 단계 | 하는 일 | 걸리는 시간(참고) |
+|---|---|---|
+| 1. 데이터 내려받기 | 프로그램을 내 컴퓨터로 복사하고 필요한 부품을 설치합니다 | 1~2분 |
+| 2. 데이터 저장소 켜기 | 자료를 담을 데이터베이스와 파일 저장소를 켭니다 | 1분 이내(최초에는 이미지 내려받기 몇 분) |
+| 3. 자료 불러오기 | 모을 대상(채널·검색어)을 등록하고 자료를 가져옵니다 | 영상 약 340건 기준 약 9분 |
+| 4. AI 검색을 위한 자료 준비(임베딩) | 문장의 뜻을 AI가 비교할 수 있는 숫자로 바꿔 둡니다 | 수 초~수 분(최초에는 모델 약 1.1GB 내려받기) |
+| 5. 필요한 자료 찾기 | 궁금한 내용을 문장으로 입력해 관련 자료를 찾습니다 | 수 초 |
+
+### 1) 데이터 내려받기
+
+저장소를 복제하고, 이 프로젝트 전용 파이썬 환경을 만들어 필요한 라이브러리를 설치합니다.
 
 ```bash
 git clone https://github.com/ThirdActiveDataExTech/thirdparty-opensw-showcase.git
 cd thirdparty-opensw-showcase
 
-python -m venv .venv && source .venv/bin/activate
+python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
 pip install -e .
 ```
 
-### 2) 데이터베이스 기동
+### 2) 데이터 저장소 켜기
+
+설정 파일을 만들고 값을 채운 뒤, 데이터베이스(PostgreSQL + pgvector)와 파일 저장소(SeaweedFS, S3 호환)를 켭니다.
 
 ```bash
-cp .env.example .env     # DB_PASSWORD 등 값을 채웁니다
-docker compose up -d     # PostgreSQL 17 + pgvector, MinIO
+cp .env.example .env          # 열어서 DB_PASSWORD, S3_SECRET_KEY, API 키를 채웁니다
+docker compose up -d --wait   # 두 저장소가 준비될 때까지 기다립니다
+python scripts/init_schema.py # 자료를 담을 표(테이블)를 만듭니다 — 처음 한 번만
 ```
 
-스키마를 생성합니다.
+`init_schema.py`는 이미 표가 있으면 아무것도 바꾸지 않으므로 다시 실행해도 안전합니다.
+
+### 3) 자료 불러오기
+
+무엇을 모을지(수집 단위)를 등록하고, 등록할 때 알려 주는 데이터셋 ID로 수집을 실행합니다.
+YouTube 채널 ID는 채널 페이지 주소의 `/channel/UC…` 부분입니다.
 
 ```bash
-for f in sql/*.sql; do psql "$DATABASE_URL" -f "$f"; done
+# 수집 단위 등록 — 예: 국가암정보센터 채널
+python scripts/register_dataset.py video \
+    --title "암 정보 영상" \
+    --description "암 예방·검진·치료 정보를 다루는 공공 채널의 영상" \
+    --subjects UCnHq2L1NAGMpb_VE_4wiSUQ \
+    --keywords "암,건강정보,검진"
+# → 등록 완료: urn:youtube:dataset_xxxxxx
+
+# 수집 실행 (위에서 받은 ID를 넣습니다)
+python -m src.main run urn:youtube:dataset_xxxxxx
 ```
 
-### 3) 데이터 수집
+뉴스·블로그는 `video` 대신 `news`·`blog`를, `--subjects`에 검색어를 쉼표로 넣습니다.
+영상은 음성을 자막으로 바꾸는 작업이 함께 돌며, 1회 수집에 쓰는 시간 상한은 `.env`의
+`YOUTUBE_TRANSCRIPT_BUDGET_SEC`로 정합니다.
 
-네이버·YouTube API 키가 필요합니다. 발급처는 `.env.example`에 적어두었습니다.
+### 4) AI 검색을 위한 자료 준비(임베딩)
 
-```bash
-# 데이터셋 등록 (수집 단위를 정의합니다)
-python scripts/register_dataset.py \
-    --source-type video \
-    --title "반도체 기술 채널" \
-    --channel-id UCWwgaK7x0_FR1goeSRazfsQ \
-    --keywords "반도체,HBM,메모리"
-
-# 수집 실행
-python -m src.main --dataset-id urn:youtube:dataset_xxxxxx
-```
-
-### 4) 임베딩 생성
+모은 글과 자막을 작은 조각으로 나누고, 조각마다 뜻을 나타내는 숫자(벡터)를 만들어 저장합니다.
+수집할 때 대부분 함께 만들어지며, 이 명령은 빠진 것을 채우고 결과를 보여 줍니다.
 
 ```bash
 python scripts/backfill_embeddings.py
@@ -94,11 +120,15 @@ python scripts/backfill_embeddings.py
 
 최초 실행 시 임베딩 모델(약 1.1GB)을 내려받습니다. 이후에는 캐시를 씁니다.
 
-### 5) 검색
+### 5) 필요한 자료 찾기
+
+찾고 싶은 내용을 문장으로 입력합니다. 단어가 똑같지 않아도 뜻이 가까운 자료를 찾아 줍니다.
 
 ```bash
 python scripts/search_demo.py "위암 조기 진단" --source video
 ```
+
+`--source`는 `video`·`news`·`blog` 중에서 고릅니다.
 
 ---
 
